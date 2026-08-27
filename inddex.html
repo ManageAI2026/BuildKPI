@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manage AI — Build Department KPI Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0F172A;--navy2:#1B2740;--blue:#4A90E2;--blueDk:#0070C0;--body:#5A6C7D;--bord:#E2E8F0;--grid:#E6EBF1;--surf:#F8FAFC;--surf2:#F1F5F9;--good:#10B981;--bad:#EF4444;--mut:#9CA3AF}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:Inter,Arial,sans-serif;color:var(--body);background:#fff;font-size:14px}
+h1,h2,h3,.mont{font-family:Montserrat,Arial,sans-serif}
+.mono{font-family:'JetBrains Mono',monospace}
+a{color:var(--blue);text-decoration:none}a:hover{color:var(--blueDk)}
+button{font-family:inherit;cursor:pointer}
+#root{display:flex;min-height:100vh}
+/* sidebar */
+#side{width:230px;flex:none;background:var(--navy);color:#fff;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+#side .logo{padding:22px 20px 18px;font-family:Montserrat;font-weight:800;font-size:19px;letter-spacing:.02em;border-bottom:1px solid rgba(255,255,255,.08)}
+#side .logo b{color:#fff}#side .logo span{color:var(--blue)}
+#side .sub{font-family:Montserrat;font-weight:600;font-size:12px;letter-spacing:.12em;color:#7D8CA3;margin-top:5px}
+nav{padding:14px 0;flex:1}
+nav a{display:flex;align-items:center;gap:11px;padding:11px 20px;color:#AEBCCB;font-weight:500;font-size:13.5px;border-left:3px solid transparent}
+nav a svg{flex:none}
+nav a:hover{background:rgba(255,255,255,.05);color:#fff}
+nav a.on{background:var(--navy2);color:#fff;border-left-color:var(--blue)}
+#side .foot{padding:16px 20px;border-top:1px solid rgba(255,255,255,.08);font-size:12px}
+.snapchip{display:inline-block;background:var(--navy2);color:#7DB2EA;font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 10px;border-radius:6px}
+.livesync{display:flex;align-items:center;gap:8px;margin-top:12px;color:#7D8CA3;cursor:not-allowed}
+.livesync .tog{width:30px;height:16px;border-radius:8px;background:#2A3A55;position:relative}
+.livesync .tog::after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#55688A}
+/* main */
+#main{flex:1;min-width:0;display:flex;flex-direction:column}
+#top{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--bord);display:flex;align-items:center;gap:16px;padding:0 28px;height:60px}
+#top h1{font-size:19px;font-weight:700;color:var(--navy);margin:0;flex:1;letter-spacing:-.01em}
+#gsearch{width:250px;padding:8px 12px;border:1px solid var(--bord);border-radius:8px;font:inherit;font-size:13px;color:var(--navy);background:var(--surf)}
+#gsearch:focus{outline:2px solid var(--blue);outline-offset:-1px}
+.btn{background:var(--blueDk);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-weight:600;font-size:13px}
+.btn:hover{background:#005A9C}
+/* filter bar */
+#fbar{position:sticky;top:60px;z-index:29;background:#fff;border-bottom:1px solid var(--bord);padding:10px 28px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.flabel{font-family:Montserrat;font-weight:700;font-size:12px;letter-spacing:.1em;color:var(--mut)}
+.seg{display:inline-flex;border:1px solid var(--bord);border-radius:8px;overflow:hidden}
+.seg button{background:#fff;border:none;padding:7px 13px;font-size:12.5px;font-weight:600;color:var(--body)}
+.seg button.on{background:var(--navy);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:6px;max-width:560px}
+.chip{border:1px solid var(--bord);background:#fff;border-radius:14px;padding:4px 11px;font-size:12px;font-weight:500;color:var(--body)}
+.chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.chip small{opacity:.7;font-size:11px}
+.reset{background:none;border:none;color:var(--blue);font-weight:600;font-size:12.5px}
+.fcap{font-size:12px;color:var(--mut);width:100%}
+/* content */
+#content{padding:24px 28px 10px;flex:1;background:var(--surf)}
+.page{display:none;max-width:1460px;margin:0 auto}
+.page.on{display:block;animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.kpirow{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.kpi{background:var(--navy);border-radius:14px;padding:18px 20px;color:#fff}
+.kpi .lab{font-family:Montserrat;font-weight:700;font-size:12px;letter-spacing:.1em;color:#7D8CA3;text-transform:uppercase}
+.kpi .num{font-family:Montserrat;font-weight:800;font-size:36px;color:var(--blue);margin:6px 0 2px;letter-spacing:-.02em}
+.kpi .sub{font-size:12px;color:#AEBCCB}
+.kpi .sub .up{color:var(--good)}.kpi .sub .dn{color:var(--bad)}
+.card{background:#fff;border:1px solid var(--bord);border-radius:14px;box-shadow:0 1px 2px rgba(15,23,42,.05);margin-top:16px}
+.card .hd{padding:14px 20px;border-bottom:1px solid var(--bord);display:flex;align-items:center;gap:12px}
+.card .hd h3{margin:0;font-size:14px;font-weight:700;color:var(--navy);flex:1}
+.card .hd .cap{font-size:12px;color:var(--mut)}
+.card .bd{padding:18px 20px}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start}
+.grid2eq{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.insight{margin-top:14px;font-size:14px;color:var(--navy);background:#fff;border:1px solid var(--bord);border-left:3px solid var(--blue);border-radius:10px;padding:12px 16px}
+canvas.chart{width:100%;display:block}
+/* tables */
+table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{font-family:Montserrat;font-weight:700;font-size:12px;letter-spacing:.06em;color:var(--mut);text-transform:uppercase;text-align:left;padding:9px 12px;border-bottom:1px solid var(--bord);cursor:pointer;white-space:nowrap;user-select:none}
+.tbl th .si{color:var(--blue)}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--surf2);color:var(--body);white-space:nowrap}
+.tbl tr.click{cursor:pointer}
+.tbl tr.click:hover{background:var(--surf)}
+.tbl tr.sel{background:#EDF5FD}
+.tname{font-weight:600;color:var(--navy)}
+.d-up{color:var(--good);font-weight:600}.d-dn{color:var(--bad);font-weight:600}.d-z{color:var(--mut)}
+.pill{display:inline-block;font-family:Montserrat;font-weight:700;font-size:12px;border-radius:6px;padding:2px 8px;letter-spacing:.04em}
+.pill.gray{background:var(--surf2);color:var(--mut)}
+.pill.blue{background:#E0F2FE;color:var(--blueDk)}
+.pill.green{background:#D1FAE5;color:#047857}
+.pill.navy{background:var(--navy);color:#fff}
+.v2chip{display:inline-block;background:#E0F2FE;color:var(--blueDk);font-family:Montserrat;font-weight:700;font-size:12px;padding:3px 10px;border-radius:6px;letter-spacing:.05em}
+/* ticker / feed */
+.feed{list-style:none;margin:0;padding:0}
+.feed li{padding:10px 0;border-bottom:1px solid var(--surf2);display:flex;gap:10px;align-items:baseline}
+.feed .prn{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blueDk);flex:none}
+.feed .prt{font-size:13px;color:var(--body);line-height:1.4}
+/* timeline */
+.tline{position:relative;margin:8px 0 4px;padding-left:0;height:96px}
+.tline .axis{position:absolute;left:0;right:0;top:46px;height:2px;background:var(--grid)}
+.tline .dot{position:absolute;top:40px;width:12px;height:12px;border-radius:50%;background:var(--blue);border:2px solid #fff;box-shadow:0 0 0 1px var(--blue)}
+.tline .vl{position:absolute;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--navy);transform:translateX(-50%);white-space:nowrap}
+.tline .dl{position:absolute;top:66px;font-size:12px;color:var(--mut);transform:translateX(-50%);white-space:nowrap}
+/* blocked cards */
+.ownergrp{margin-top:14px}
+.bcard{background:#fff;border:1px solid var(--bord);border-radius:12px;padding:14px 18px;margin-top:10px;display:flex;gap:14px;align-items:flex-start}
+.bcard .it{font-weight:600;color:var(--navy);min-width:210px}
+.bcard .nt{flex:1;font-size:13px;line-height:1.45}
+.ochip{display:inline-block;background:var(--navy);color:#fff;font-family:Montserrat;font-weight:700;font-size:12px;padding:3px 11px;border-radius:12px}
+/* activity timeline */
+.vtl{position:relative;margin:6px 0 0;padding-left:26px}
+.vtl::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--grid)}
+.vtl .ev{position:relative;padding:9px 0}
+.vtl .ev::before{content:"";position:absolute;left:-23px;top:15px;width:9px;height:9px;border-radius:50%;background:var(--blue);border:2px solid #fff;box-shadow:0 0 0 1px var(--blue)}
+/* pipeline strip */
+.pstrip{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.5px;color:var(--mut)}
+.pstrip b{color:var(--body);font-weight:600;background:var(--surf2);border-radius:6px;padding:4px 10px}
+.pstrip svg{flex:none}
+/* quality */
+.qgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
+.qcard{background:#fff;border:1px solid var(--bord);border-radius:14px;padding:18px 20px;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.qcard .lab{font-family:Montserrat;font-weight:700;font-size:12px;letter-spacing:.08em;color:var(--mut);text-transform:uppercase}
+.qcard .num{font-family:Montserrat;font-weight:800;font-size:30px;color:var(--navy);margin:8px 0 4px}
+.qcard .num em{font-style:normal;color:var(--blue)}
+.qcard .sub{font-size:12.5px;line-height:1.45}
+.qcard.v2 .num{color:var(--mut);font-weight:700}
+/* empty */
+.empty{padding:36px 20px;text-align:center;color:var(--mut)}
+.empty svg{display:block;margin:0 auto 10px}
+/* tooltip */
+#tip{position:fixed;z-index:99;background:var(--navy);color:#fff;font-size:12px;padding:6px 10px;border-radius:7px;pointer-events:none;display:none;white-space:pre;font-family:Inter}
+/* footer */
+#foot{padding:16px 28px 22px;background:var(--surf);text-align:center;font-size:12px;color:var(--mut)}
+.errbanner{background:var(--bad);color:#fff;font-weight:600;padding:12px 20px;border-radius:10px;margin-bottom:14px}
+.pgbtns{display:flex;gap:6px;align-items:center;justify-content:flex-end;padding:10px 0 0}
+.pgbtns button{border:1px solid var(--bord);background:#fff;border-radius:7px;padding:5px 11px;font-size:12.5px;color:var(--body)}
+.pgbtns button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.searchmini{padding:8px 12px;border:1px solid var(--bord);border-radius:8px;font:inherit;font-size:13px;width:220px}
+@media(max-width:1100px){#side{width:64px}#side .logo{font-size:0;padding:20px 12px}#side .logo span{font-size:17px}#side .sub,#side nav a em,#side .foot{display:none}nav a{justify-content:center;padding:12px}}
+@media(max-width:800px){.kpirow{grid-template-columns:1fr 1fr}.grid2,.grid2eq,.qgrid{grid-template-columns:1fr}#fbar{top:auto;position:static}}
+@media print{#side,#fbar,#top #gsearch,#top .btn{display:none}#content{padding:0}}
+</style>
+</head>
+<body>
+<div id="tip"></div>
+<div id="root">
+<aside id="side">
+  <div class="logo"><b>MANAGE</b> <span>AI</span><div class="sub">BUILD DEPARTMENT</div></div>
+  <nav id="nav"></nav>
+  <div class="foot">
+    <span class="snapchip">DATA: 2026-08-27</span>
+    <div class="livesync" title="arrives when wired (v1)"><span class="tog"></span> Live sync</div>
+  </div>
+</aside>
+<div id="main">
+  <div id="top">
+    <h1 id="ptitle">Overview</h1>
+    <input id="gsearch" type="search" placeholder="Search tables & feeds…" aria-label="Global search">
+    <button class="btn" onclick="window.print()">Export</button>
+  </div>
+  <div id="fbar"></div>
+  <div id="content">
+    <div id="assertbox"></div>
+    <div class="page" id="pg-overview"></div>
+    <div class="page" id="pg-deployments"></div>
+    <div class="page" id="pg-pipeline"></div>
+    <div class="page" id="pg-quality"></div>
+    <div class="page" id="pg-blocked"></div>
+    <div class="page" id="pg-activity"></div>
+  </div>
+  <div id="foot">MOCKUP — real operating data, static snapshot 2026-08-27. Not wired to live records. © 2026 Manage AI. Confidential.</div>
+</div>
+</div>
+<script>
+/* ============ DATA (embedded — the only source of numbers) ============ */
+const RAW_CSV=`charlie,2026-08-27,0.22.1,CHARLIE-2026-08-26
+charlie,2026-08-24,0.22.0,PLATFORM-2026-08-18e
+charlie,2026-08-19,0.21.0,CHARLIE-2026-08-19
+charlie,2026-08-18,0.18.0,PLATFORM-2026-08-15
+charlie,2026-08-18,0.20.0,CHARLIE-2026-08-18
+charlie,2026-08-17,0.17.0,PLATFORM-2026-08-14g
+charlie,2026-08-16,0.16.0,PLATFORM-2026-08-14f
+charlie,2026-08-16,0.15.0,PLATFORM-2026-08-14c
+charlie,2026-08-12,0.14.0,PLATFORM-2026-08-06c
+charlie,2026-08-12,0.13.0,PAIGE-2026-08-06
+charlie,2026-08-09,0.11.1,PLATFORM-2026-08-04
+charlie,2026-08-08,0.11.2,PLATFORM-2026-08-04b
+charlie,2026-08-02,0.11.0,CHARLIE-2026-08-01
+charlie,2026-07-28,0.10.0,PLATFORM-2026-07-27
+charlie,2026-07-26,0.9.0,
+charlie,2026-07-26,0.8.2,
+charlie,2026-07-25,0.8.1,
+charlie,2026-07-24,0.8.0,
+charlie,2026-07-23,0.7.0,
+charlie,2026-07-18,0.2.0,
+charlie,2026-07-18,0.2.0,
+charlie,2026-07-18,0.2.0,
+charlie,2026-07-17,0.2.0,
+charlie,2026-07-17,0.2.0,
+charlie,2026-07-17,0.2.0,
+charlito,2026-07-26,1.12.0,
+charlito,2026-07-25,1.11.0,
+charlito,2026-07-25,1.10.0,
+charlito,2026-07-24,1.9.0,
+charlito,2026-07-24,1.9.0,
+charlito,2026-07-24,1.8.0,
+charlito,2026-07-18,0.7.0-prebuild,
+charlito,2026-07-18,0.7.0-prebuild,
+charlito,2026-07-18,0.7.0-prebuild,
+charlito,2026-07-18,0.63-prebuild,
+charlito,2026-07-17,0.62-prebuild,
+charlito,2026-07-16,0.61-prebuild,
+charlito,2026-07-16,0.6.2-prebuild,
+charlito,2026-07-15,0.6.2-prebuild,
+charlito,2026-07-15,0.6.1-prebuild,
+charlito,2026-07-15,0.6.0-prebuild,
+charlito,2026-07-15,0.5.3-prebuild,
+charlito,2026-07-15,0.5.2-prebuild,
+charlito,2026-07-15,0.5.1-prebuild,
+charlito,2026-07-15,0.5.1-prebuild,
+charlito,2026-07-14,0.5.0-prebuild,
+charlito,2026-07-14,0.2.1-prebuild,
+charlito,2026-07-13,0.2.0-prebuild,
+charlito,2026-07-12,0.1.0-prebuild,
+forge,2026-08-23,1.27.0,FORGE-2026-08-18
+forge,2026-08-18,1.26.0,PLATFORM-2026-08-15
+forge,2026-08-17,1.25.0,PLATFORM-2026-08-14h
+forge,2026-08-17,1.24.0,FORGE-2026-08-14
+forge,2026-08-17,1.23.0,PLATFORM-2026-08-14g
+forge,2026-08-16,1.22.0,PLATFORM-2026-08-14f
+forge,2026-08-16,1.21.0,PLATFORM-2026-08-14c
+forge,2026-08-13,1.20.1,FRG-2026-08-13
+forge,2026-08-12,1.20.0,FRG-2026-08-11
+forge,2026-08-08,1.19.1,PLATFORM-2026-08-04b
+forge,2026-08-06,1.19.0,PLATFORM-2026-08-04
+forge,2026-08-04,1.18.4,FORGE-SKILL-INVENTORY
+forge,2026-08-03,1.18.3,PLATFORM-2026-07-30d
+forge,2026-08-03,1.18.2,PLATFORM-2026-07-30c
+forge,2026-08-02,1.18.1,FORGE-2026-07-30b
+forge,2026-08-01,1.18.0,FORGE-2026-07-30
+forge,2026-07-28,1.15.0,PLATFORM-2026-07-27
+forge,2026-07-26,1.14.3,PLATFORM-2026-07-26
+forge,2026-07-26,1.14.2,PKG-PLATFORM-2026-07-22
+forge,2026-07-26,1.14.1,PKG-PLATFORM-2026-07-22
+forge,2026-07-25,1.14.0,PKG-PLATFORM-2026-07-22
+forge,2026-07-24,1.13.0,
+forge,2026-07-21,1.12.0,
+forge,2026-07-20,1.11.0,
+forge,2026-07-20,1.9.0,
+forge,2026-07-19,1.8.0,
+forge,2026-07-19,1.8.0,
+forge,2026-07-19,1.7.0,
+forge,2026-07-19,1.6.0,
+forge,2026-07-19,1.6.0,
+forge,2026-07-19,1.5.0,
+forge,2026-07-18,1.5.0,
+forge,2026-07-18,1.5.0,
+forge,2026-07-12,1.4.1,
+forge,2026-07-12,1.3.1,
+forge,2026-07-12,1.3.0,
+link,2026-08-24,0.9.0,PLATFORM-2026-08-18e
+link,2026-08-24,0.8.3,LINK-2026-08-20
+link,2026-08-23,0.8.2,LINK-2026-08-18b
+link,2026-08-20,0.8.1,forge/link-0.8.1-deploy-close
+link,2026-08-18,0.8.0,PLATFORM-2026-08-15
+link,2026-08-17,0.7.0,PLATFORM-2026-08-14g
+link,2026-08-13,0.6.0,forge/link-0.6.0-deploy-close
+link,2026-08-09,0.4.1,PLATFORM-2026-08-04
+link,2026-08-08,0.4.2,PLATFORM-2026-08-04b
+link,2026-08-07,0.4.0,PLATFORM-2026-08-04
+link,2026-08-04,0.3.0,forge/link-0.3.0-deploy-close
+link,2026-07-30,0.2.0,forge/link-and-release-packaging
+manageai-git-write,2026-08-24,1.3.0,PLATFORM-2026-08-18e
+manageai-git-write,2026-08-12,1.2.1,PLATFORM-2026-08-13
+manageai-git-write,2026-08-11,1.0.0,GITWRITE-2026-08-11
+manageai-git-write,2026-08-11,1.1.0,GITWRITE-2026-08-11
+orientation,2026-08-18,0.1.0,PLATFORM-2026-08-15
+paige,2026-08-19,0.11.0,PAIGE-2026-08-17
+paige,2026-08-18,0.10.0,PLATFORM-2026-08-15
+paige,2026-08-17,0.9.0,PAIGE-2026-08-15
+paige,2026-08-17,0.8.0,PLATFORM-2026-08-14g
+paige,2026-08-16,0.7.0,PLATFORM-2026-08-14c
+paige,2026-08-13,0.6.0,PAIGE-2026-08-12
+paige,2026-08-12,0.5.0,PAIGE-2026-08-06
+platform,2026-08-27,0.34.4,PLATFORM-2026-08-27
+platform,2026-08-27,0.34.2,PLATFORM-2026-08-26
+platform,2026-08-25,0.34.1,PLATFORM-2026-08-25
+platform,2026-08-24,0.34.0,PLATFORM-2026-08-18e
+platform,2026-08-23,0.33.2,PLATFORM-2026-08-18c
+platform,2026-08-23,0.33.1,PLATFORM-2026-08-18b
+platform,2026-08-18,0.33.0,PLATFORM-2026-08-18
+platform,2026-08-18,0.32.0,PLATFORM-2026-08-15
+platform,2026-08-17,0.31.0,PLATFORM-2026-08-14h
+platform,2026-08-17,0.30.0,PLATFORM-2026-08-14g
+platform,2026-08-16,0.29.0,PLATFORM-2026-08-14f
+platform,2026-08-16,0.28.0,PLATFORM-2026-08-14e
+platform,2026-08-16,0.27.0,PLATFORM-2026-08-14d
+platform,2026-08-16,0.24.0,PLATFORM-2026-08-14a
+platform,2026-08-16,0.25.0,PLATFORM-2026-08-14b
+platform,2026-08-16,0.26.0,PLATFORM-2026-08-14c
+platform,2026-08-13,0.23.0,PLATFORM-2026-08-12b
+platform,2026-08-13,0.22.0,PLATFORM-2026-08-12
+platform,2026-08-12,0.21.0,PLATFORM-2026-08-13
+platform,2026-08-12,0.18.0,PLATFORM-2026-08-06c
+platform,2026-08-12,0.16.2,PLATFORM-2026-08-11
+platform,2026-08-12,0.19.0,PLATFORM-2026-08-06d
+platform,2026-08-12,0.17.0,PLATFORM-2026-08-06b
+platform,2026-08-12,0.13.0,PLATFORM-2026-08-04c
+platform,2026-08-12,0.12.0,PLATFORM-2026-08-06a
+platform,2026-08-09,0.10.1,PLATFORM-2026-08-06
+platform,2026-08-09,0.10.0,PLATFORM-2026-08-04
+platform,2026-08-08,0.10.2,PLATFORM-2026-08-04b
+platform,2026-08-06,0.9.6,PLT-077
+platform,2026-08-04,0.9.5,PLATFORM-2026-08-03
+regan,2026-08-24,1.34.0,PLATFORM-2026-08-18e
+regan,2026-08-20,1.33.0,REGAN-2026-08-17
+regan,2026-08-19,1.32.0,REGAN-2026-08-15b
+regan,2026-08-18,1.31.0,PLATFORM-2026-08-15
+regan,2026-08-17,1.30.0,PLATFORM-2026-08-14h
+regan,2026-08-17,1.28.0,PLATFORM-2026-08-14g
+regan,2026-08-17,1.29.0,REGAN-2026-08-14c
+regan,2026-08-16,1.27.0,REGAN-2026-08-14b
+regan,2026-08-16,1.26.0,REGAN-2026-08-14
+regan,2026-08-16,1.25.0,PLATFORM-2026-08-14c
+regan,2026-08-14,1.24.1,REGAN-2026-08-13
+regan,2026-08-14,1.24.0,REGAN-2026-08-12b
+regan,2026-08-12,1.23.0,GITWRITE-ROUTING-2026-08-13
+regan,2026-08-12,1.23.1,REGAN-2026-08-12
+regan,2026-08-12,1.21.0,SEB-2026-08-06
+regan,2026-08-12,1.22.0,REGAN-1.22.0-recovery
+regan,2026-08-06,1.18.0,REGAN-2026-08-04
+regan,2026-08-05,1.17.2,REGAN-2026-07-31
+regan,2026-08-04,1.17.1,REGAN-2026-07-31
+regan,2026-08-03,1.17.0,REGAN-2026-07-31
+regan,2026-08-02,1.16.2,REGAN-2026-07-30
+regan,2026-08-02,1.16.1,WES-2026-07-30
+regan,2026-08-01,1.16.0,PLATFORM-2026-07-30
+regan,2026-07-29,1.15.0,PLATFORM-2026-07-27b
+regan,2026-07-26,1.14.0,
+regan,2026-07-26,1.13.0,
+release-packaging,2026-08-23,0.4.2,PLATFORM-2026-08-18d
+release-packaging,2026-08-19,0.4.1,RELEASE-PACKAGING-2026-08-18
+release-packaging,2026-08-16,0.4.0,PLATFORM-2026-08-14f
+release-packaging,2026-08-16,0.3.0,PLATFORM-2026-08-14a
+release-packaging,2026-08-05,0.2.0,PLATFORM-2026-08-04
+release-packaging,2026-07-30,0.1.0,forge/link-and-release-packaging
+seb,2026-08-18,0.11.0,PLATFORM-2026-08-15
+seb,2026-08-18,0.10.0,SEB-2026-08-15
+seb,2026-08-17,0.9.0,PLATFORM-2026-08-14g
+seb,2026-08-16,0.8.0,PLATFORM-2026-08-14c
+seb,2026-08-12,0.7.0,GITWRITE-ROUTING-2026-08-13
+seb,2026-08-12,0.6.0,SEB-2026-08-06
+seb,2026-08-03,0.5.12,SEB-2026-07-30
+seb,2026-07-26,0.5.11,
+seb,2026-07-26,0.5.10,
+seb,2026-07-25,0.5.9,
+seb,2026-07-24,0.5.8,
+seb,2026-07-18,0.5.7-prebuild,
+seb,2026-07-16,0.5.6-prebuild,
+seb,2026-07-15,0.5.5-prebuild,
+seb,2026-07-15,0.5.0-prebuild,
+seb,2026-07-15,0.5.0-prebuild,
+seb,2026-07-15,0.5.0-prebuild,
+seb,2026-07-15,0.4.0-prebuild,
+seb,2026-07-13,0.3.0-prebuild,
+seb,2026-07-13,0.2.0-prebuild,
+seb,2026-07-12,0.1.0-prebuild,
+seb,2026-07-12,0.1.0-prebuild,
+session-capture,2026-08-17,0.1.0,PLATFORM-2026-08-14g
+wes,2026-08-23,1.16.1,WES-2026-08-20
+wes,2026-08-23,1.16.0,WES-2026-08-19b
+wes,2026-08-23,1.15.1,WES-2026-08-19
+wes,2026-08-19,1.15.0,WES-2026-08-17
+wes,2026-08-18,1.14.0,PLATFORM-2026-08-15
+wes,2026-08-17,1.13.1,PAIGE-2026-08-15
+wes,2026-08-17,1.13.0,PLATFORM-2026-08-14g
+wes,2026-08-16,1.12.0,PLATFORM-2026-08-14c
+wes,2026-08-14,1.11.0,WES-2026-08-12
+wes,2026-08-12,1.10.0,WES-2026-08-06b
+wes,2026-08-12,1.9.0,WES-2026-08-06
+wes,2026-08-03,1.7.2,WES-2026-07-30b
+wes,2026-08-02,1.7.1,WES-2026-08-01
+wes,2026-08-02,1.7.0,WES-2026-07-30
+wes,2026-07-26,1.6.1,
+wes,2026-07-25,1.6.0,
+wes,2026-07-25,1.5.0,
+wes,2026-07-24,1.4.0,
+wes,2026-07-24,1.4.0,
+wes,2026-07-23,1.3.0,
+wes,2026-07-18,0.7.1-prebuild,
+wes,2026-07-18,0.7.0-prebuild,
+wes,2026-07-18,0.7.0-prebuild,
+wes,2026-07-16,0.6.0-prebuild,
+wes,2026-07-14,0.5.0-prebuild,
+wes,2026-07-12,0.1.0-prebuild,
+wes,2026-07-12,0.1.0-prebuild,
+zeus,2026-08-16,0.2.0,PLATFORM-2026-08-14c
+zeus,2026-08-14,0.1.0,ORC-01-v2`;
+const QUEUES=[{name:"AITM Change Queue",n:484},{name:"AITM Deployment Queue",n:150},{name:"AITM Readiness Queue",n:57}];
+const READY_LANE=[{label:"Freeze-ready (platform line)",n:29,c:"#4A90E2"},{label:"Unbindable — no skill field",n:39,c:"#8FB9E8"},{label:"Disposition pending (wes)",n:2,c:"#0F172A"}];
+const CHANGE_EVENTS=[{label:"Package frozen",n:47},{label:"Package deployed (event file)",n:8},{label:"Superseded",n:4},{label:"Resolved without build",n:1}];
+const FROZEN_BY_LINE=[["PLATFORM",19],["WES",9],["REGAN",7],["CHARLIE",3],["LINK",3],["PAIGE",2],["FORGE",2],["SEB",1],["RELEASE-PACKAGING",1]];
+const BLOCKED=[
+ {item:"PLT-140 ruling",owner:"Chad",note:"Oldest unanswered decision on the board; holds PLATFORM-2026-08-21"},
+ {item:"WES-078 ratification",owner:"Chad",note:"One-line ruling; unblocks wes 1.18.0 and the wes chain behind it"},
+ {item:"Skill-field ruling (39 cards)",owner:"Chad",note:"Where the eval-binding target lives on a Change Queue card"},
+ {item:"PNY-007 legacy waiver",owner:"Chad",note:"Holds Penny cards; handled separately"},
+ {item:"PLT-124 server restart",owner:"Jacob",note:"Physical op; holds wes 1.19.1"},
+ {item:"2 wes card dispositions",owner:"Dave/Chad",note:"Deployed vs Rejected — thread contradicts lane"}];
+const ACTIVITY=[
+ ["#322","R8: usage governor and account switching (law only — no metering code)",1],
+ ["#321","ops: arm the stage-mode trial — the law, the tick prompt, and a guard that speaks gh",1],
+ ["#320","records: capture six wes eval-approval bindings through the writer (PLT-116)",1],
+ ["#319","records: platform 0.34.4 deploy-close (PLT-144)",1],
+ ["#318","Freeze PLATFORM-2026-08-27 — PLT-144 eval estate canonicalization, platform 0.34.4",1],
+ ["#317","ops: Platform-line binding exception — self-expiring, platform ONLY",0],
+ ["#316","HARD RAILS: no self-origination — Forge never creates or expands the work backlog",0],
+ ["#315","PLT-144: canonicalize all 25 legacy eval artifacts + recover seb-02",1],
+ ["#314","CLAUDE.md: the PLT-116 bootstrap exception expires, per its own terms",0],
+ ["#313","records: platform 0.34.2 deploy-close (PLT-128) + REGAN-2026-08-19 terminal record",0],
+ ["#312","wes 1.20.0 — Foundation register classes, citations, packet review, deck removal",0],
+ ["#311","records: batch 2026-08-27 — two blocked packages (WES-2026-08-24, REGAN-2026-08-19)",0],
+ ["#310","records: platform 0.34.2 (PLT-128) build state, changelog, decisions",0],
+ ["#309","PLATFORM-2026-08-26: PLT-128 approval-capture writer (platform 0.34.2)",0],
+ ["#308","records: charlie 0.22.1 deploy-close (dep-0222, PLT-143) + 3 back-filled wes registry rows",0],
+ ["#307","CLAUDE.md v2: ratified Deployment Queue state machine + build pipeline",0],
+ ["#306","Regan records — BLD-07 at 85, READY TO BUILD",0],
+ ["#301","CHARLIE-2026-08-26: PLT-143 packaged-for-deployment handoff (charlie 0.22.1)",0],
+ ["#299","Freeze charlie 0.22.1 — a packaged change leaves the Change Queue at handoff",0],
+ ["#296","Freeze platform 0.34.2 — an approved eval finally has somewhere to be recorded",0]];
+const V2METRICS=["Decision latency (raised → ruled)","Build lead time (Collected → deployed)","Freeze→deploy lag distribution","PR time-to-merge","Staged-PR merged-as-is rate","Sweep cost/day (usage.jsonl)"];
+const LAWS=[["#316","No self-origination","Forge never creates or expands the work backlog."],["#321","Stage-mode trial rules","R1–R7 + R7-A: nothing merges unattended."],["#322","Usage governor","R8: usage governor and account switching — law only."]];
+
+/* ============ PARSE + RECONCILE ============ */
+const ROWS=RAW_CSV.split("\n").map(l=>{const p=l.split(",");return{a:p[0],d:p[1],v:p[2],pkg:p[3]||"",pre:p[2].includes("prebuild"),m:p[1].slice(5,7)}});
+const ASSETS=[...new Set(ROWS.map(r=>r.a))].sort();
+const TOTAL=ROWS.length, JUL=ROWS.filter(r=>r.m==="07").length, AUG=ROWS.filter(r=>r.m==="08").length;
+const OK = TOTAL===223 && JUL===89 && AUG===134;
+if(!OK) document.getElementById("assertbox").innerHTML='<div class="errbanner">DATA RECONCILIATION FAILED — parse gives '+TOTAL+' rows (Jul '+JUL+' / Aug '+AUG+'), expected 223 (89/134). Charts suppressed.</div>';
+
+/* ============ STATE ============ */
+const state={month:"all",team:new Set(ASSETS),rel:"prod",q:"",sel:null,augWeekView:false,rawPage:0,sort:{k:"aug",dir:-1}};
+function fRows(){return ROWS.filter(r=>(state.month==="all"||r.m===state.month)&&state.team.has(r.a)&&(state.rel==="all"||(state.rel==="prod"?!r.pre:r.pre)))}
+function byAsset(rows){const m={};ASSETS.forEach(a=>m[a]={jul:0,aug:0,rows:[]});rows.forEach(r=>{m[r.a][r.m==="07"?"jul":"aug"]++;m[r.a].rows.push(r)});return m}
+/* week buckets */
+const WEEKS=[["Jul 12–18","07",12,18],["Jul 19–25","07",19,25],["Jul 26–31","07",26,31],["Aug 1–7","08",1,7],["Aug 8–14","08",8,14],["Aug 15–21","08",15,21],["Aug 22–27","08",22,27]];
+function weekIdx(r){const day=+r.d.slice(8,10);return WEEKS.findIndex(w=>r.m===w[1]&&day>=w[2]&&day<=w[3])}
+function weekCounts(rows){const c=WEEKS.map(_=>0);rows.forEach(r=>{const i=weekIdx(r);if(i>=0)c[i]++});return c}
+
+/* ============ MINI CHART LIB (offline, no deps) ============ */
+const tip=document.getElementById("tip");
+function attachTip(cv){if(cv._tipped)return;cv._tipped=1;
+ cv.addEventListener("mousemove",e=>{const b=cv.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top;
+  const h=(cv._hits||[]).find(t=>x>=t.x&&x<=t.x+t.w&&y>=t.y&&y<=t.y+t.h);
+  if(h){tip.textContent=h.tip;tip.style.display="block";tip.style.left=(e.clientX+12)+"px";tip.style.top=(e.clientY-10)+"px";cv.style.cursor=h.click?"pointer":"default"}
+  else{tip.style.display="none";cv.style.cursor="default"}});
+ cv.addEventListener("mouseleave",()=>tip.style.display="none");
+ cv.addEventListener("click",e=>{const b=cv.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top;
+  const h=(cv._hits||[]).find(t=>x>=t.x&&x<=t.x+t.w&&y>=t.y&&y<=t.y+t.h);if(h&&h.click)h.click()});}
+function prep(cv,hpx){const w=cv.clientWidth||600;cv.style.height=hpx+"px";const dpr=window.devicePixelRatio||1;cv.width=w*dpr;cv.height=hpx*dpr;const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,hpx);cv._hits=[];attachTip(cv);return{ctx,W:w,H:hpx}}
+function niceMax(v){if(v<=5)return 5;const p=Math.pow(10,Math.floor(Math.log10(v)));const n=Math.ceil(v/p*2)/2*p;return Math.ceil(n)}
+function axes(ctx,W,H,pad,max){ctx.strokeStyle="#E6EBF1";ctx.fillStyle="#9CA3AF";ctx.font="12px Inter,Arial";ctx.textAlign="right";const steps=4;for(let i=0;i<=steps;i++){const y=H-pad.b-(H-pad.t-pad.b)*i/steps;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();ctx.fillText(Math.round(max*i/steps),pad.l-8,y+4)}}
+function groupedBars(cv,labels,series,opts={}){const{ctx,W,H}=prep(cv,opts.h||300);const pad={l:44,r:10,t:14,b:44};
+ const max=niceMax(Math.max(1,...series.flatMap(s=>s.data)));axes(ctx,W,H,pad,max);
+ const n=labels.length,gw=(W-pad.l-pad.r)/n,bw=Math.min(26,(gw-14)/series.length);
+ labels.forEach((lb,i)=>{const gx=pad.l+gw*i+ (gw-bw*series.length)/2;
+  series.forEach((s,si)=>{const v=s.data[i],bh=(H-pad.t-pad.b)*v/max,x=gx+si*bw,y=H-pad.b-bh;
+   ctx.fillStyle=s.color;ctx.beginPath();ctx.roundRect(x,y,bw-3,bh,[3,3,0,0]);ctx.fill();
+   cv._hits.push({x,y:Math.min(y,H-pad.b-2),w:bw-3,h:Math.max(bh,4),tip:lb+" — "+s.name+": "+v,click:opts.onBar?()=>opts.onBar(lb):null})});
+  ctx.fillStyle="#5A6C7D";ctx.font="12px Inter,Arial";ctx.textAlign="center";ctx.save();ctx.translate(pad.l+gw*i+gw/2,H-pad.b+14);if(opts.rot){ctx.rotate(-Math.PI/5);ctx.textAlign="right"}ctx.fillText(lb,0,4);ctx.restore()});}
+function stackedBars(cv,labels,series,opts={}){const{ctx,W,H}=prep(cv,opts.h||300);const pad={l:44,r:10,t:14,b:34};
+ const totals=labels.map((_,i)=>series.reduce((s,x)=>s+x.data[i],0));const max=niceMax(Math.max(1,...totals));axes(ctx,W,H,pad,max);
+ const n=labels.length,gw=(W-pad.l-pad.r)/n,bw=Math.min(56,gw-18);
+ labels.forEach((lb,i)=>{let acc=0;const x=pad.l+gw*i+(gw-bw)/2;
+  series.forEach(s=>{const v=s.data[i];if(!v)return;const bh=(H-pad.t-pad.b)*v/max,y=H-pad.b-(H-pad.t-pad.b)*acc/max-bh;
+   ctx.fillStyle=s.color;ctx.fillRect(x,y,bw,bh);cv._hits.push({x,y,w:bw,h:bh,tip:lb+" — "+s.name+": "+v});acc+=v});
+  ctx.fillStyle="#5A6C7D";ctx.font="12px Inter,Arial";ctx.textAlign="center";ctx.fillText(lb,x+bw/2,H-pad.b+18)});}
+function lineChart(cv,labels,data,opts={}){const{ctx,W,H}=prep(cv,opts.h||280);const pad={l:44,r:16,t:18,b:36};
+ const max=niceMax(Math.max(1,...data));axes(ctx,W,H,pad,max);
+ const n=labels.length,sx=i=>pad.l+(W-pad.l-pad.r)*i/(n-1),sy=v=>H-pad.b-(H-pad.t-pad.b)*v/max;
+ ctx.beginPath();data.forEach((v,i)=>i?ctx.lineTo(sx(i),sy(v)):ctx.moveTo(sx(i),sy(v)));
+ ctx.strokeStyle="#4A90E2";ctx.lineWidth=2.5;ctx.lineJoin="round";ctx.stroke();
+ ctx.lineTo(sx(n-1),H-pad.b);ctx.lineTo(sx(0),H-pad.b);ctx.closePath();ctx.fillStyle="rgba(74,144,226,.10)";ctx.fill();
+ data.forEach((v,i)=>{ctx.beginPath();ctx.arc(sx(i),sy(v),4,0,7);ctx.fillStyle="#fff";ctx.fill();ctx.strokeStyle="#4A90E2";ctx.lineWidth=2;ctx.stroke();
+  cv._hits.push({x:sx(i)-8,y:sy(v)-8,w:16,h:16,tip:labels[i]+": "+v+(opts.notes&&opts.notes[i]?"\n"+opts.notes[i]:"")});
+  ctx.fillStyle="#5A6C7D";ctx.font="12px Inter,Arial";ctx.textAlign="center";ctx.fillText(labels[i],sx(i),H-pad.b+18)});
+ if(opts.annotIndex!=null){const x=sx(opts.annotIndex);ctx.strokeStyle="#0F172A";ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,H-pad.b);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle="#0F172A";ctx.font="700 12px Montserrat,Arial";ctx.textAlign=opts.annotIndex>n/2?"right":"left";ctx.fillText(opts.annotText,x+(opts.annotIndex>n/2?-8:8),pad.t+10)}}
+function hBars(cv,items,opts={}){const rowH=34,H=items.length*rowH+8;const{ctx,W}=prep(cv,H);
+ const max=Math.max(1,...items.map(i=>i.n));const lw=opts.lw||170;
+ items.forEach((it,i)=>{const y=i*rowH+7,bw=(W-lw-70)*it.n/max;
+  ctx.fillStyle="#0F172A";ctx.font="600 12.5px Inter,Arial";ctx.textAlign="right";ctx.fillText(it.label,lw-10,y+14);
+  ctx.fillStyle="#F1F5F9";ctx.beginPath();ctx.roundRect(lw,y,W-lw-70,20,4);ctx.fill();
+  ctx.fillStyle=it.c||"#4A90E2";ctx.beginPath();ctx.roundRect(lw,y,Math.max(bw,3),20,4);ctx.fill();
+  ctx.fillStyle="#5A6C7D";ctx.font="700 12.5px Montserrat,Arial";ctx.textAlign="left";ctx.fillText(it.n,lw+Math.max(bw,3)+8,y+14);
+  cv._hits.push({x:lw,y,w:W-lw-70,h:20,tip:it.label+": "+it.n})});}
+function hStack(cv,segs,total){const{ctx,W}=prep(cv,46);let x=8;const w=W-16;
+ segs.forEach(s=>{const sw=w*s.n/total;ctx.fillStyle=s.c;ctx.beginPath();ctx.roundRect(x,8,sw-2,26,5);ctx.fill();
+  if(sw>34){ctx.fillStyle="#fff";ctx.font="700 12.5px Montserrat,Arial";ctx.textAlign="center";ctx.fillText(s.n,x+sw/2,26)}
+  cv._hits.push({x,y:8,w:sw-2,h:26,tip:s.label+": "+s.n+" of "+total});x+=sw});}
+function spark(cv,data){const W=110,H=26;cv.width=W*(devicePixelRatio||1);cv.height=H*(devicePixelRatio||1);cv.style.width=W+"px";cv.style.height=H+"px";
+ const ctx=cv.getContext("2d");ctx.setTransform(devicePixelRatio||1,0,0,devicePixelRatio||1,0,0);
+ const max=Math.max(1,...data);ctx.beginPath();data.forEach((v,i)=>{const x=4+(W-8)*i/(data.length-1),y=H-4-(H-9)*v/max;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});
+ ctx.strokeStyle="#4A90E2";ctx.lineWidth=1.8;ctx.stroke();}
+
+/* ============ HELPERS ============ */
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const fmtD=(j,a)=>{const d=a-j,p=j? (d/j*100).toFixed(1):null;return{d,txt:(d>0?"+":"")+d+(p!==null?" ("+(d>0?"+":"")+p+"%)":j===0&&a>0?" (new line)":"")}};
+function countUp(el,to){const from=+ (el.dataset.v||0);el.dataset.v=to;const t0=performance.now();
+ (function f(t){const k=Math.min(1,(t-t0)/220);el.textContent=Math.round(from+(to-from)*k).toLocaleString();if(k<1)requestAnimationFrame(f)})(t0);}
+function emptyState(msg){return '<div class="empty"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'+msg+'</div>'}
+
+/* ============ NAV + FILTER BAR ============ */
+const PAGES=[["overview","Overview","M3 13h8V3H3zM13 21h8v-8h-8zM13 3v6h8V3zM3 21h8v-4H3z"],["deployments","Deployments","M12 2v14M6 10l6 6 6-6M4 20h16"],["pipeline","Release Pipeline","M4 6h16M4 12h10M4 18h6"],["quality","Quality & Governance","M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"],["blocked","Blocked & Decisions","M12 8v5M12 16.5v.5M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"],["activity","Activity","M22 12h-4l-3 8L9 4l-3 8H2"]];
+document.getElementById("nav").innerHTML=PAGES.map(p=>'<a href="#'+p[0]+'" data-p="'+p[0]+'"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="'+p[2]+'"/></svg><em>'+p[1]+'</em></a>').join("");
+function renderFbar(){
+ const fb=document.getElementById("fbar");
+ const mopts=[["all","All"],["07","July 2026"],["08","August 2026"]];
+ const ropts=[["prod","Production"],["all","All"],["pre","Prebuild only"]];
+ const active=[];
+ if(state.month!=="all")active.push({t:mopts.find(m=>m[0]===state.month)[1],x:()=>state.month="all"});
+ if(state.team.size<ASSETS.length)[...state.team].forEach(a=>active.push({t:a,x:()=>{state.team=new Set(ASSETS)}}));
+ if(state.rel!=="prod")active.push({t:ropts.find(r=>r[0]===state.rel)[1],x:()=>state.rel="prod"});
+ if(state.sel)active.push({t:"drill: "+state.sel,x:()=>state.sel=null});
+ fb.innerHTML=
+  '<span class="flabel">MONTH</span><span class="seg">'+mopts.map(m=>'<button data-m="'+m[0]+'" class="'+(state.month===m[0]?"on":"")+'">'+m[1]+'</button>').join("")+'</span>'+
+  '<span class="flabel">RELEASE TYPE</span><span class="seg">'+ropts.map(r=>'<button data-r="'+r[0]+'" class="'+(state.rel===r[0]?"on":"")+'">'+r[1]+'</button>').join("")+'</span>'+
+  '<span class="flabel">TEAMMATES</span><span class="chips">'+ASSETS.map(a=>{const c=ROWS.filter(r=>r.a===a).length;return '<button class="chip '+(state.team.has(a)&&state.team.size<ASSETS.length?"on":state.team.size===ASSETS.length?"":"")+' '+(state.team.size<ASSETS.length&&state.team.has(a)?"on":"")+'" data-a="'+a+'">'+a+' <small>'+c+'</small></button>'}).join("")+'</span>'+
+  '<button class="reset" id="resetf">Reset</button>'+
+  (active.length?'<span class="chips" style="width:100%">'+active.map((c,i)=>'<button class="chip on" data-x="'+i+'">'+esc(c.t)+' ✕</button>').join("")+'</span>':"")+
+  '<span class="fcap">Production view excludes July prebuild releases ('+ROWS.filter(r=>r.pre).length+' rows, all July) — switch to “All” to reconcile to 223.</span>';
+ fb.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{state.month=b.dataset.m;refresh()});
+ fb.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{state.rel=b.dataset.r;refresh()});
+ fb.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=b.dataset.a;
+  if(state.team.size===ASSETS.length){state.team=new Set([a])}
+  else if(state.team.has(a)){state.team.delete(a);if(!state.team.size)state.team=new Set(ASSETS)}
+  else state.team.add(a);refresh()});
+ fb.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{active[+b.dataset.x].x();refresh()});
+ document.getElementById("resetf").onclick=()=>{state.month="all";state.team=new Set(ASSETS);state.rel="prod";state.sel=null;refresh()};
+}
+
+/* ============ PAGE RENDERERS ============ */
+function pgOverview(){
+ const el=document.getElementById("pg-overview");const rows=fRows();const A=byAsset(rows);
+ const augN=rows.filter(r=>r.m==="08").length, julN=rows.filter(r=>r.m==="07").length;
+ const mom=fmtD(julN,augN);
+ const activeLines=ASSETS.filter(a=>A[a].aug>0).length;
+ el.innerHTML=
+ '<div class="kpirow">'+
+  kpi("August deploys","k1",'<span class="sub">of '+rows.length+' in current view</span>')+
+  kpi("MoM vs July","k2",'<span class="sub"><span class="'+(mom.d>=0?"up":"dn")+'">'+mom.txt+'</span></span>')+
+  kpi("Active teammate lines","k3",'<span class="sub">of 14 lines in August</span>')+
+  kpi("Packages frozen","k4",'<span class="sub">per-file event era</span>')+
+  kpi("Eval estate","k5",'<span class="sub">canonical files healthy</span>')+
+ '</div>'+
+ '<div class="insight">August shipped half again more than July (89 → 134, +50.6% on all rows); the platform line went from zero to the factory’s most-shipped asset (0 → 30).</div>'+
+ '<div class="grid2"><div>'+
+  card("Deploys per week","annotation on Aug 27 — hover the last point",'<canvas class="chart" id="cWeek"></canvas>')+
+  card("Top movers — July → August","biggest MoM changes in the current view",'<canvas class="chart" id="cMovers"></canvas>')+
+ '</div><div>'+
+  card("Activity","latest 8 PRs — workforce.manageai",'<ul class="feed">'+ACTIVITY.slice(0,8).map(p=>'<li><span class="prn">'+p[0]+'</span><span class="prt">'+esc(p[1])+(p[2]?' <span class="pill green">MERGED</span>':"")+'</span></li>').join("")+'</ul>')+
+  card("Waiting on humans","",'<div style="display:flex;align-items:center;gap:16px"><span class="mont" style="font-size:34px;font-weight:800;color:#0F172A">6</span><span style="font-size:13px;line-height:1.45">items waiting on a human decision.<br><a href="#blocked">Open Blocked &amp; Decisions →</a></span></div>')+
+ '</div></div>';
+ countUp(q("#k1"),augN);
+ q("#k2").textContent=(mom.d>0?"+":"")+mom.d; q("#k2").dataset.v=mom.d;
+ countUp(q("#k3"),activeLines);countUp(q("#k4"),47);q("#k5").textContent="33/33";
+ if(!rows.length){q("#cWeek").parentElement.innerHTML=emptyState("No rows match the current filters.");return}
+ const wc=weekCounts(rows);
+ lineChart(q("#cWeek"),WEEKS.map(w=>w[0]),wc,{annotIndex:6,annotText:"Aug 27: semi-automated sweep armed",h:280});
+ /* movers */
+ const movers=ASSETS.map(a=>({a,jul:A[a].jul,aug:A[a].aug,d:A[a].aug-A[a].jul})).filter(m=>m.jul||m.aug).sort((x,y)=>y.d-x.d);
+ const top=[...movers.slice(0,3),...movers.slice(-1)];
+ hBars(q("#cMovers"),top.map(m=>({label:m.a+" "+m.jul+"→"+m.aug+(m.a==="charlito"?" *":""),n:Math.abs(m.d),c:m.d>=0?"#4A90E2":"#0F172A"})),{lw:230});
+ q("#cMovers").insertAdjacentHTML("afterend",'<div style="font-size:12px;color:var(--mut);margin-top:6px">* charlito 24→0 — scoping teammate; work moved to the regan line.</div>');
+}
+function kpi(lab,id,sub){return '<div class="kpi"><div class="lab">'+lab+'</div><div class="num" id="'+id+'">0</div>'+sub+'</div>'}
+function card(t,cap,body){return '<div class="card"><div class="hd"><h3>'+t+'</h3><span class="cap">'+cap+'</span></div><div class="bd">'+body+'</div></div>'}
+const q=s=>document.querySelector(s);
+
+function pgDeployments(){
+ const el=document.getElementById("pg-deployments");const rows=fRows();const A=byAsset(rows);
+ const list=ASSETS.map(a=>{const g=A[a];const latest=g.rows.slice().sort((x,y)=>y.d.localeCompare(x.d))[0];
+  return{a,jul:g.jul,aug:g.aug,d:g.aug-g.jul,lv:latest?latest.v:"—",ld:latest?latest.d:"—",rows:g.rows}}).filter(t=>t.jul||t.aug);
+ const sk=state.sort;list.sort((x,y)=>{const vx=x[sk.k],vy=y[sk.k];return(typeof vx==="string"?vx.localeCompare(vy):vx-vy)*sk.dir});
+ const qtxt=state.q.toLowerCase();
+ const shown=list.filter(t=>!qtxt||t.a.includes(qtxt)||t.lv.toLowerCase().includes(qtxt));
+ const sortHd=(k,l)=>'<th data-k="'+k+'">'+l+(sk.k===k?' <span class="si">'+(sk.dir>0?"▲":"▼")+'</span>':"")+'</th>';
+ el.innerHTML=
+  card("July vs August per teammate","click a bar group to drill down",'<div style="display:flex;gap:10px;justify-content:flex-end;margin-bottom:8px"><span class="seg"><button id="vwM" class="'+(!state.augWeekView?"on":"")+'">By month</button><button id="vwW" class="'+(state.augWeekView?"on":"")+'">August by week</button></span></div><canvas class="chart" id="cMain"></canvas>'+
+   '<div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:var(--mut)"><span><span style="display:inline-block;width:10px;height:10px;background:#8FB9E8;border-radius:2px"></span> July</span><span><span style="display:inline-block;width:10px;height:10px;background:#4A90E2;border-radius:2px"></span> August</span></div>')+
+  (state.sel?drill(A[state.sel]):"")+
+  card("Teammates","row click drills down · sortable",'<div style="overflow:auto"><table class="tbl"><thead><tr>'+sortHd("a","Teammate")+sortHd("jul","Jul")+sortHd("aug","Aug")+sortHd("d","MoM Δ")+sortHd("lv","Latest version")+sortHd("ld","Latest deploy")+'<th>8-week trend</th></tr></thead><tbody>'+
+   (shown.length?shown.map(t=>{const dd=fmtD(t.jul,t.aug);return '<tr class="click '+(state.sel===t.a?"sel":"")+'" data-a="'+t.a+'"><td class="tname">'+t.a+'</td><td>'+t.jul+'</td><td>'+t.aug+'</td><td class="'+(dd.d>0?"d-up":dd.d<0?"d-dn":"d-z")+'">'+(dd.d>0?"▲ ":dd.d<0?"▼ ":"")+dd.txt+'</td><td class="mono">'+t.lv+'</td><td>'+t.ld+'</td><td><canvas class="spk" data-a="'+t.a+'"></canvas></td></tr>'}).join(""):'<tr><td colspan="7">'+emptyState("No teammates match.")+'</td></tr>')+
+  '</tbody></table></div>')+
+  rawTable(rows);
+ /* main chart */
+ const act=list.slice().sort((x,y)=>y.aug-x.aug);
+ if(!rows.length){q("#cMain").parentElement.innerHTML=emptyState("No rows match the current filters.")}
+ else if(!state.augWeekView){
+  groupedBars(q("#cMain"),act.map(t=>t.a),[{name:"July",color:"#8FB9E8",data:act.map(t=>t.jul)},{name:"August",color:"#4A90E2",data:act.map(t=>t.aug)}],{h:320,rot:true,onBar:a=>{state.sel=(state.sel===a?null:a);refresh()}});
+ }else{
+  const augWeeks=WEEKS.slice(3);const ramp=["#4A90E2","#1E40AF","#8FB9E8","#0F172A","#6BA0DE","#7DB2EA","#2E5FA3","#A8C8EC","#16233F","#5C9BE0","#8FB9E8","#3D77C2","#B9D3F0","#1B2740"];
+  const tops=act.filter(t=>t.aug>0);
+  stackedBars(q("#cMain"),augWeeks.map(w=>w[0]),tops.map((t,i)=>({name:t.a,color:ramp[i%ramp.length],data:augWeeks.map((w,wi)=>t.rows.filter(r=>weekIdx(r)===wi+3).length)})),{h:320});
+ }
+ q("#vwM").onclick=()=>{state.augWeekView=false;refresh()};
+ q("#vwW").onclick=()=>{state.augWeekView=true;refresh()};
+ document.querySelectorAll("#pg-deployments .tbl th[data-k]").forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sk.k===k)sk.dir*=-1;else{sk.k=k;sk.dir=-1}refresh()});
+ document.querySelectorAll("#pg-deployments tr.click").forEach(tr=>tr.onclick=()=>{state.sel=(state.sel===tr.dataset.a?null:tr.dataset.a);refresh()});
+ document.querySelectorAll("canvas.spk").forEach(cv=>{const a=cv.dataset.a;const g=A[a];const last8=WEEKS.map((_,i)=>g.rows.filter(r=>weekIdx(r)===i).length);spark(cv,last8)});
+ wireRaw(rows);
+}
+function drill(g){
+ const rs=g.rows.slice().sort((x,y)=>x.d.localeCompare(y.d));if(!rs.length)return"";
+ const first=Date.parse(rs[0].d),last=Date.parse(rs[rs.length-1].d),span=Math.max(1,last-first);
+ const name=rs[0].a;
+ const show=rs.length>14?rs.filter((_,i)=>i%Math.ceil(rs.length/14)===0||i===rs.length-1):rs;
+ const qtxt=state.q.toLowerCase();
+ const tbl=g.rows.filter(r=>!qtxt||r.v.toLowerCase().includes(qtxt)||r.pkg.toLowerCase().includes(qtxt)||r.d.includes(qtxt));
+ return card("Drill-down — "+name+" version timeline",rs.length+" releases · "+rs[0].v+" → "+rs[rs.length-1].v,
+  '<div class="tline"><div class="axis"></div>'+show.map((r,i)=>{const p=6+88*(Date.parse(r.d)-first)/span;
+   return '<span class="dot" style="left:'+p+'%" title="'+r.v+' · '+r.d+'"></span><span class="vl" style="left:'+p+'%;top:'+(i%2?"8px":"22px")+'">'+r.v+'</span><span class="dl" style="left:'+p+'%">'+r.d.slice(5)+'</span>'}).join("")+'</div>'+
+  '<div style="overflow:auto;max-height:280px;margin-top:10px"><table class="tbl"><thead><tr><th>Date</th><th>Version</th><th>Package</th></tr></thead><tbody>'+
+   tbl.slice().sort((x,y)=>y.d.localeCompare(x.d)).map(r=>'<tr><td>'+r.d+'</td><td class="mono">'+r.v+(r.pre?' <span class="pill gray">PREBUILD</span>':"")+'</td><td class="mono" style="font-size:12px">'+esc(r.pkg||"—")+'</td></tr>').join("")+
+  '</tbody></table></div>');
+}
+function rawTable(rows){
+ const qtxt=state.q.toLowerCase();
+ const all=rows.filter(r=>!qtxt||r.a.includes(qtxt)||r.v.toLowerCase().includes(qtxt)||r.pkg.toLowerCase().includes(qtxt)||r.d.includes(qtxt)).slice().sort((x,y)=>y.d.localeCompare(x.d));
+ const pp=25,pages=Math.max(1,Math.ceil(all.length/pp));state.rawPage=Math.min(state.rawPage,pages-1);
+ const pg=all.slice(state.rawPage*pp,state.rawPage*pp+pp);
+ return card("Raw releases","all rows in view · searchable · 25/page","").replace('<div class="bd"></div>','<div class="bd">'+
+  '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span class="cap" style="font-size:12px;color:var(--mut)">'+all.length+' rows in view · page '+(state.rawPage+1)+' of '+pages+'</span></div>'+
+  (pg.length?'<div style="overflow:auto"><table class="tbl"><thead><tr><th>Date</th><th>Teammate</th><th>Version</th><th>Package</th></tr></thead><tbody>'+
+   pg.map(r=>'<tr><td>'+r.d+'</td><td class="tname">'+r.a+'</td><td class="mono">'+r.v+(r.pre?' <span class="pill gray">PREBUILD</span>':"")+'</td><td class="mono" style="font-size:12px">'+esc(r.pkg||"—")+'</td></tr>').join("")+
+  '</tbody></table></div>':emptyState("No rows match."))+
+  '<div class="pgbtns" id="rawpg">'+Array.from({length:pages},(_,i)=>'<button data-pg="'+i+'" class="'+(i===state.rawPage?"on":"")+'">'+(i+1)+'</button>').join("")+'</div></div>');
+}
+function wireRaw(){document.querySelectorAll("#rawpg button").forEach(b=>b.onclick=()=>{state.rawPage=+b.dataset.pg;refresh()})}
+
+function pgPipeline(){
+ const el=document.getElementById("pg-pipeline");
+ el.innerHTML=
+ '<div class="kpirow" style="grid-template-columns:repeat(3,1fr)">'+QUEUES.map((qd,i)=>'<div class="kpi"><div class="lab">'+qd.name+'</div><div class="num" id="qk'+i+'">0</div><span class="sub">cards on the queue</span></div>').join("")+'</div>'+
+ card("Ready-lane classification","70 Ready cards · pre-flight run 2026-08-27",'<canvas class="chart" id="cReady"></canvas>'+
+  '<table class="tbl" style="margin-top:10px"><tbody>'+READY_LANE.map(s=>'<tr><td><span style="display:inline-block;width:10px;height:10px;background:'+s.c+';border-radius:2px;margin-right:8px"></span>'+s.label+'</td><td style="text-align:right;font-weight:600;color:var(--navy)">'+s.n+'</td></tr>').join("")+'</tbody></table>'+
+  '<div style="font-size:12px;color:var(--mut);margin-top:8px">The 39 unbindable cards are cleared by one governance ruling.</div>')+
+ '<div class="grid2eq">'+
+  card("Change events by type","August (per-file event era)",'<canvas class="chart" id="cEvents"></canvas>')+
+  card("Frozen packages by line","47 total",'<canvas class="chart" id="cFrozen"></canvas>')+
+ '</div>'+
+ card("Pipeline","how a change becomes a registry row",'<div class="pstrip"><b>card</b>'+arrow()+'<b>triage</b>'+arrow()+'<b>Ready</b>'+arrow()+'<b>freeze</b>'+arrow()+'<b>merge (human)</b>'+arrow()+'<b>deploy-close</b>'+arrow()+'<b>registry row</b></div>');
+ QUEUES.forEach((qd,i)=>countUp(q("#qk"+i),qd.n));
+ hStack(q("#cReady"),READY_LANE,70);
+ hBars(q("#cEvents"),CHANGE_EVENTS.map(e=>({label:e.label,n:e.n})),{lw:230});
+ const ramp=["#4A90E2","#1E40AF","#8FB9E8","#0F172A","#6BA0DE","#7DB2EA","#2E5FA3","#A8C8EC","#5C9BE0"];
+ hBars(q("#cFrozen"),FROZEN_BY_LINE.map((f,i)=>({label:f[0],n:f[1],c:ramp[i%ramp.length]})),{lw:190});
+}
+const arrow=()=>'<svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round"><path d="M1 6h12M10 2l4 4-4 4"/></svg>';
+
+function pgQuality(){
+ const el=document.getElementById("pg-quality");
+ el.innerHTML=
+ '<div class="qgrid">'+
+  qc("Eval estate",'<em>33/33</em>','8/33 on Aug 26 → 33/33 on Aug 27 — fixed by PLT-144, deployed as platform 0.34.4.'+beforeAfter(8,33))+
+  qc("Writer self-test",'<em>18/18</em>','Approval-capture writer PASS — platform 0.34.2, PLT-128.')+
+  qc("Merge-guard self-test",'<em>15/15</em>','9 block cases / 6 allow cases — PR #321.')+
+  qc("Binding records",'<em>7</em>','For wes: 6 canonical via the writer, 1 malformed historical kept append-only.')+
+  qc("Repo-pair integrity",'<em>26/26</em>','Changed blobs sha-verified byte-identical across the active/testing pair on the last platform release.')+
+  '<div class="qcard"><div class="lab">Law shipped this week</div><div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">'+LAWS.map(l=>'<div style="font-size:13px;line-height:1.4"><span class="mono" style="color:var(--blueDk)">'+l[0]+'</span> <strong style="color:var(--navy)">'+l[1]+'</strong> — '+l[2]+'</div>').join("")+'</div></div>'+
+ '</div>'+
+ '<div class="card"><div class="hd"><h3>V2 metrics</h3><span class="cap">not derivable from this snapshot — never faked</span></div><div class="bd"><div class="qgrid" style="margin-top:0">'+
+  V2METRICS.map(m=>'<div class="qcard v2"><div class="lab">'+m+'</div><div class="num">—</div><span class="v2chip">V2 — NEEDS INSTRUMENTATION</span></div>').join("")+
+ '</div></div></div>';
+}
+function qc(lab,num,sub){return '<div class="qcard"><div class="lab">'+lab+'</div><div class="num">'+num+'</div><div class="sub">'+sub+'</div></div>'}
+function beforeAfter(b,t){return '<div style="margin-top:10px;display:flex;gap:6px;align-items:center"><span style="flex:none;font-size:12px;color:var(--mut)">Aug 26</span><span style="flex:1;height:8px;background:#F1F5F9;border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:'+(b/t*100)+'%;background:#EF4444"></span></span><span style="flex:none;font-size:12px;color:var(--mut)">Aug 27</span><span style="flex:1;height:8px;background:#F1F5F9;border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:100%;background:#10B981"></span></span></div>'}
+
+function pgBlocked(){
+ const el=document.getElementById("pg-blocked");
+ const qtxt=state.q.toLowerCase();
+ const items=BLOCKED.filter(b=>!qtxt||b.item.toLowerCase().includes(qtxt)||b.note.toLowerCase().includes(qtxt)||b.owner.toLowerCase().includes(qtxt));
+ const owners=[...new Set(items.map(b=>b.owner))];
+ el.innerHTML=
+ '<div class="kpi" style="max-width:420px"><div class="lab">Waiting on a human decision</div><div class="num">'+items.length+'</div><span class="sub">of 6 items · snapshot 2026-08-27</span></div>'+
+ (items.length?owners.map(o=>'<div class="ownergrp"><span class="ochip">'+o+' · '+items.filter(b=>b.owner===o).length+'</span>'+
+   items.filter(b=>b.owner===o).map(b=>'<div class="bcard"><span class="it">'+b.item+'</span><span class="nt">'+esc(b.note)+'</span></div>').join("")+'</div>').join(""):emptyState("No blocked items match."))+
+ '<p style="font-size:12.5px;color:var(--mut);margin-top:18px">Every item here is one ruling from unblocking work already approved.</p>';
+}
+
+function pgActivity(){
+ const el=document.getElementById("pg-activity");
+ const qtxt=state.q.toLowerCase();
+ const items=ACTIVITY.filter(p=>!qtxt||p[0].includes(qtxt)||p[1].toLowerCase().includes(qtxt));
+ el.innerHTML=
+ card("Activity","52 PRs opened #271–#322 in roughly the past week",
+  items.length?'<div class="vtl">'+items.map(p=>'<div class="ev"><span class="prn mono" style="color:var(--blueDk);font-size:12.5px">'+p[0]+'</span> <span style="font-size:13.5px;color:var(--navy);font-weight:500">'+esc(p[1])+'</span>'+(p[2]?' <span class="pill green">MERGED</span>':"")+'</div>').join("")+'</div>':emptyState("No PRs match your search."));
+}
+
+/* ============ ROUTER + REFRESH ============ */
+const TITLES={overview:"Overview",deployments:"Deployments",pipeline:"Release Pipeline",quality:"Quality & Governance",blocked:"Blocked & Decisions",activity:"Activity"};
+function curPage(){const h=location.hash.replace("#","");return TITLES[h]?h:"overview"}
+function refresh(){
+ renderFbar();
+ const p=curPage();
+ document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on",a.dataset.p===p));
+ document.querySelectorAll(".page").forEach(pg=>pg.classList.toggle("on",pg.id==="pg-"+p));
+ document.getElementById("ptitle").textContent=TITLES[p];
+ ({overview:pgOverview,deployments:pgDeployments,pipeline:pgPipeline,quality:pgQuality,blocked:pgBlocked,activity:pgActivity})[p]();
+}
+window.addEventListener("hashchange",refresh);
+window.addEventListener("resize",()=>refresh());
+document.getElementById("gsearch").addEventListener("input",e=>{state.q=e.target.value;refresh();document.getElementById("gsearch").focus()});
+refresh();
+</script>
+</body>
+</html>
